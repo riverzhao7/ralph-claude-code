@@ -711,8 +711,10 @@ should_exit_gracefully() {
     # Fix #144: Only match valid markdown checkboxes, not date entries like [2026-01-29]
     # Valid patterns: "- [ ]" (uncompleted) and "- [x]" or "- [X]" (completed)
     if [[ -f "$RALPH_DIR/fix_plan.md" ]]; then
-        local uncompleted_items=$(grep -cE "^[[:space:]]*- \[ \]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || echo "0")
-        local completed_items=$(grep -cE "^[[:space:]]*- \[[xX]\]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || echo "0")
+        local uncompleted_items=$(grep -cE "^[[:space:]]*- \[ \]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || true)
+        local completed_items=$(grep -cE "^[[:space:]]*- \[[xX]\]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || true)
+        uncompleted_items=${uncompleted_items:-0}
+        completed_items=${completed_items:-0}
         local total_items=$((uncompleted_items + completed_items))
 
         if [[ $total_items -gt 0 ]] && [[ $completed_items -eq $total_items ]]; then
@@ -877,7 +879,8 @@ build_loop_context() {
     # Extract incomplete tasks from fix_plan.md
     # Bug #3 Fix: Support indented markdown checkboxes with [[:space:]]* pattern
     if [[ -f "$RALPH_DIR/fix_plan.md" ]]; then
-        local incomplete_tasks=$(grep -cE "^[[:space:]]*- \[ \]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || echo "0")
+        local incomplete_tasks=$(grep -cE "^[[:space:]]*- \[ \]" "$RALPH_DIR/fix_plan.md" 2>/dev/null || true)
+        incomplete_tasks=${incomplete_tasks:-0}
         context+="Remaining tasks: ${incomplete_tasks}. "
     fi
 
@@ -1826,7 +1829,7 @@ EOF
                         git diff --name-only "$loop_start_sha" "$current_sha" 2>/dev/null
                         git diff --name-only HEAD 2>/dev/null           # unstaged changes
                         git diff --name-only --cached 2>/dev/null       # staged changes
-                    } | sort -u | wc -l
+                    } | sort -u | wc -l | tr -d ' '
                 )
                 [[ "$VERBOSE_PROGRESS" == "true" ]] && log_status "DEBUG" "Detected $files_changed unique files changed (commits + working tree) since loop start"
             else
@@ -1835,7 +1838,7 @@ EOF
                     {
                         git diff --name-only 2>/dev/null                # unstaged changes
                         git diff --name-only --cached 2>/dev/null       # staged changes
-                    } | sort -u | wc -l
+                    } | sort -u | wc -l | tr -d ' '
                 )
             fi
         fi
@@ -1901,14 +1904,14 @@ EOF
                             git diff --name-only "$timeout_loop_start_sha" "$timeout_current_sha" 2>/dev/null
                             git diff --name-only HEAD 2>/dev/null
                             git diff --name-only --cached 2>/dev/null
-                        } | sort -u | wc -l
+                        } | sort -u | wc -l | tr -d ' '
                     )
                 else
                     timeout_files_changed=$(
                         {
                             git diff --name-only 2>/dev/null
                             git diff --name-only --cached 2>/dev/null
-                        } | sort -u | wc -l
+                        } | sort -u | wc -l | tr -d ' '
                     )
                 fi
             fi
@@ -2045,7 +2048,7 @@ main() {
 
     # Check CLI version compatibility and auto-update (Issue #190)
     check_claude_version
-    check_claude_updates
+    # check_claude_updates
 
     log_status "SUCCESS" "🚀 Ralph loop starting with Claude Code"
     log_status "INFO" "Max calls per hour: $MAX_CALLS_PER_HOUR"

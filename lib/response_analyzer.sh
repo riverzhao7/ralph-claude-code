@@ -40,7 +40,7 @@ detect_questions() {
     # Count lines matching question patterns (case-insensitive)
     for pattern in "${QUESTION_PATTERNS[@]}"; do
         local matches
-        matches=$(echo "$content" | grep -ciw "$pattern" 2>/dev/null || echo "0")
+        matches=$(echo "$content" | grep -ciw "$pattern" 2>/dev/null || true)
         matches=$(echo "$matches" | tr -d '[:space:]')
         matches=${matches:-0}
         question_count=$((question_count + matches))
@@ -413,7 +413,7 @@ analyze_response() {
                             git diff --name-only "$loop_start_sha" "$current_sha" 2>/dev/null
                             git diff --name-only HEAD 2>/dev/null           # unstaged changes
                             git diff --name-only --cached 2>/dev/null       # staged changes
-                        } | sort -u | wc -l
+                        } | sort -u | wc -l | tr -d ' '
                     )
                 else
                     # No commits - check for uncommitted changes (staged + unstaged)
@@ -421,7 +421,7 @@ analyze_response() {
                         {
                             git diff --name-only 2>/dev/null                # unstaged changes
                             git diff --name-only --cached 2>/dev/null       # staged changes
-                        } | sort -u | wc -l
+                        } | sort -u | wc -l | tr -d ' '
                     )
                 fi
 
@@ -524,8 +524,8 @@ analyze_response() {
     local implementation_count=0
     local error_count=0
 
-    test_command_count=$(grep -c -i "running tests\|npm test\|bats\|pytest\|jest" "$output_file" 2>/dev/null | head -1 || echo "0")
-    implementation_count=$(grep -c -i "implementing\|creating\|writing\|adding\|function\|class" "$output_file" 2>/dev/null | head -1 || echo "0")
+    test_command_count=$(grep -c -i "running tests\|npm test\|bats\|pytest\|jest" "$output_file" 2>/dev/null || true)
+    implementation_count=$(grep -c -i "implementing\|creating\|writing\|adding\|function\|class" "$output_file" 2>/dev/null || true)
 
     # Strip whitespace and ensure it's a number
     test_command_count=$(echo "$test_command_count" | tr -d '[:space:]')
@@ -549,7 +549,7 @@ analyze_response() {
     # Pattern aligned with ralph_loop.sh to ensure consistent behavior
     error_count=$(grep -v '"[^"]*error[^"]*":' "$output_file" 2>/dev/null | \
                   grep -cE '(^Error:|^ERROR:|^error:|\]: error|Link: error|Error occurred|failed with error|[Ee]xception|Fatal|FATAL)' \
-                  2>/dev/null || echo "0")
+                  2>/dev/null || true)
     error_count=$(echo "$error_count" | tr -d '[:space:]')
     error_count=${error_count:-0}
     error_count=$((error_count + 0))
@@ -595,7 +595,7 @@ analyze_response() {
                     git diff --name-only "$loop_start_sha" "$current_sha" 2>/dev/null
                     git diff --name-only HEAD 2>/dev/null           # unstaged changes
                     git diff --name-only --cached 2>/dev/null       # staged changes
-                } | sort -u | wc -l
+                } | sort -u | wc -l | tr -d ' '
             )
         else
             # No commits - check for uncommitted changes (staged + unstaged)
@@ -603,7 +603,7 @@ analyze_response() {
                 {
                     git diff --name-only 2>/dev/null                # unstaged changes
                     git diff --name-only --cached 2>/dev/null       # staged changes
-                } | sort -u | wc -l
+                } | sort -u | wc -l | tr -d ' '
             )
         fi
 
