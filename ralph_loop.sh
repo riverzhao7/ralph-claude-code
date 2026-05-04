@@ -390,8 +390,6 @@ setup_tmux_session() {
 
     # Attach to session (this will block until session ends)
     tmux attach-session -t "$session_name"
-
-    exit 0
 }
 
 # Initialize call tracking
@@ -2499,12 +2497,10 @@ done
 
 # Only execute when run directly, not when sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If tmux mode requested, set it up
     if [[ "$USE_TMUX" == "true" ]]; then
         check_tmux_available
         setup_tmux_session
+    else
+        main
     fi
-
-    # Start the main loop
-    main
 fi
